@@ -1,0 +1,22 @@
+#######################################
+# Syntax Coloring Map for arduino_midi
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Midi	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+sendController	KEYWORD2
+sendNoteOn	KEYWORD2
+sendNoteOff	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+#someVariable KEYWORD3
