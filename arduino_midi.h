@@ -18,9 +18,12 @@ public:
     
     Midi();
     
+    void start();
+
     void sendController(int channel, int cc, int value);
     void sendNoteOn(int channel, int note, int velocity);
     void sendNoteOff(int channel, int note, int velocity);
+
 
 private:
 	int clampChannel(int channel);

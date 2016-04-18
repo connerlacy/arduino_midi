@@ -10,7 +10,12 @@
 
 Midi::Midi()
 {
-    Serial.begin(31250);
+
+}
+
+void Midi::start()
+{
+    Serial.begin(31250);	
 }
 
 void Midi::sendController(int channel, int cc, int value)
