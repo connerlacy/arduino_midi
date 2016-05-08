@@ -20,21 +20,21 @@ void Midi::start()
 
 void Midi::sendController(int channel, int cc, int value)
 {
-    Serial.write(clampChannel(channel));
+    Serial.write(clampChannel(channel) + 175); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
     Serial.write(clampValue(cc));
     Serial.write(clampValue(value));
 }
 
 void Midi::sendNoteOn(int channel, int note, int velocity)
 {
-   Serial.write(clampChannel(channel));
+   Serial.write(clampChannel(channel) + 143); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
    Serial.write(clampValue(note));
    Serial.write(clampValue(velocity)); 
 }
 
 void Midi::sendNoteOff(int channel, int note, int velocity)
 {
-   Serial.write(clampChannel(channel));
+   Serial.write(clampChannel(channel) + 127); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
    Serial.write(clampValue(note));
    Serial.write(clampValue(velocity)); 
 }
