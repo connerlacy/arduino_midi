@@ -33,17 +33,39 @@ public:
     
     // ============= Input
     MidiMessageBuffer getInputMidiMessages();
-    void appendInputMidiMessagesToBuffer(MidiMessageBuffer& buffer);
+    //void appendInputMidiMessagesToBuffer(MidiMessageBuffer& buffer);
+    //void fillBufferWithInputMidiMessages(MidiMessageBuffer& bufferToFill);
 
     
 private:
-	int clampChannel(int channel);
-	int clampValue(int value);
+    int clampChannel(int channel);
+    int clampValue(int value);
+    void readSerial();
+    void processByte();
+
+    int serialByte = -1;
+    vector<int> rawByteBuffer;
+    
 };
 
 class MidiMessage
 {
 public:
+    static enum
+    {
+        NOTE_OFF,
+        NOTE_ON,
+        POLYPHONIC,
+        CC,
+        PROGRAM_CHANGE,
+        CHANNEL_PRESSURE,
+        PITCH_BEND,
+        SYSTEM_EXCLUSIVE
+    }
+    
+        
+    /*
+    
     bool    isController();
     bool    isNoteOn();
     bool    inNoteOff();
@@ -52,17 +74,19 @@ public:
     
     int     getNumBytes();
     
-    
+    */
 };
 
 class MidiMessageBuffer
 {
 public:
+    /*
     void clear();
     void appendMidiMessage(MidiMessage message);
     void prependMidiMessage(MidiMessage message);
     int  getNumMessages();
     MidiMessage getMessageAtIndex(int index)
+     */
     
 };
 
