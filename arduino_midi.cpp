@@ -94,7 +94,48 @@ void Midi::readSerial()
 
 void Midi::processByte()
 {
-    
+    if(!processingSysEx)
+    {
+    	// If our latest byte is legit...
+    	if(serialByte != -1)
+    	{
+    		// Get message type.
+    		int status = 0x8 ^ ((serialByte) >> 4);
+
+    		switch (status)
+    		{
+    			case MidiMessage::NOTE_OFF:
+    			break;
+
+    			case MidiMessage::NOTE_ON:
+    			break;
+
+    			case MidiMessage::POLYPHONIC:
+    			break;
+
+    			case MidiMessage::CC:
+    			break;
+
+    			case MidiMessage::PROGRAM_CHANGE:
+    			break;
+
+    			case MidiMessage::CHANNEL_PRESSURE:
+    			break;
+
+    			case MidiMessage::PITCH_BEND:
+    			break;
+
+    			case MidiMessage::SYSTEM_EXCLUSIVE:
+    				processingSysEx = true;
+    			break;    			
+
+    			default:
+    			break;
+    		}
+
+    	}
+    	
+    }
 }
 
 // ============================================================ //

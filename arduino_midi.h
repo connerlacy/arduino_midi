@@ -42,16 +42,16 @@ private:
     int clampValue(int value);
     void readSerial();
     void processByte();
+    bool processingSysEx = false;
 
     int serialByte = -1;
-    vector<int> rawByteBuffer;
-    
+    int rawByteBuffer[256];
 };
 
 class MidiMessage
 {
 public:
-    static enum
+    enum TYPE
     {
         NOTE_OFF,
         NOTE_ON,
@@ -61,7 +61,7 @@ public:
         CHANNEL_PRESSURE,
         PITCH_BEND,
         SYSTEM_EXCLUSIVE
-    }
+    };
     
         
     /*
