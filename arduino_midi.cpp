@@ -8,7 +8,6 @@
 
 #include "arduino_midi.h"
 
-
 // ============================================================ //
 // ============================ Midi ========================== //
 // ============================================================ //
@@ -80,19 +79,21 @@ int Midi::clampValue(int value)
 // ------------------------------------------------------------ //
 MidiMessage Midi::getInputMidiMessage()
 {
-    MidiMessage message;
+    int serialByte = -1;
 
     readSerial(serialByte);
 
     if(serialByte > -1)
     {
-        packByte(serialByte, message);
+        packByte(serialByte, m_Message);
     }
 
-    if(packetSize == 3)
+    if( validatePacket(m_Message) )
     {
-        validatePacket(message);
+        return m_Message;
     }
+
+    return MidiMessage();
 }
 
 void Midi::readSerial(int &byte)
@@ -109,7 +110,7 @@ void Midi::packByte(int &byte, MidiMessage &message)
     if(!processingSysEx)
     {
         // Expecting status byte...
-        if(packetSize == 0)
+        if(message.numBytes == 0)
         {
             // Get message type.
             int status = 0x08 ^ ((byte) >> 4);
@@ -118,7 +119,7 @@ void Midi::packByte(int &byte, MidiMessage &message)
             if(status >= 0 && status <= 7)
             {
                 // If it is, increment packet size
-                packetSize++;
+                message.numBytes++;
                 message.type = status;
 
                 // Set Channel (if not SysEx)
@@ -138,11 +139,11 @@ void Midi::packByte(int &byte, MidiMessage &message)
         }
 
         // Expecting first Data Byte...
-        else if(packetSize == 1)
+        else if(message.numBytes == 1)
         {
             if(!(byte >> 7))
             {
-                packetSize++;
+                message.numBytes++;
                 message.dataByte1 = byte;
             }
             else
@@ -152,13 +153,12 @@ void Midi::packByte(int &byte, MidiMessage &message)
         }
 
         // Expecting second Data Byte...
-        else if(packetSize == 2)
+        else if(message.numBytes == 2)
         {
             if(!(byte >> 7))
             {
-                packetSize++;
+                message.numBytes++;
                 message.dataByte1 = byte;
-                completMessage();
             }
             else
             {
@@ -215,17 +215,22 @@ bool Midi::validatePacket(MidiMessage &message)
         return false;
     }
 
-    if(type < 0 || type > 6) // Not supporting sysex for now
+    if(message.type < 0 || message.type > 6) // Not supporting sysex for now
     {
         return false;
     }
 
-    if(dataByte1 < 0 || dataByte1 > 127)
+    if(message.dataByte1 < 0 || message.dataByte1 > 127)
     {
         return false;
     }
 
-    if(dataByte2 < 0 || dataByte2 > 127)
+    if(message.dataByte2 < 0 || message.dataByte2 > 127)
+    {
+        return false;
+    }
+
+    if(message.numBytes != 3)
     {
         return false;
     }

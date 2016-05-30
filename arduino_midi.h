@@ -12,44 +12,6 @@
 #include <stdio.h>
 #include "Arduino.h"
 
-class MidiMessage;
-class MidiMessageBuffer;
-
-class Midi
-{
-public:
-    
-    Midi();
-    
-    // ============= Init
-    void start();
-
-    
-    // ============= Output
-    void sendController(int channel, int cc, int value);
-    void sendNoteOn(int channel, int note, int velocity);
-    void sendNoteOff(int channel, int note, int velocity);
-    
-    
-    // ============= Input
-    MidiMessageBuffer getInputMidiMessages();
-    //void appendInputMidiMessagesToBuffer(MidiMessageBuffer& buffer);
-    //void fillBufferWithInputMidiMessages(MidiMessageBuffer& bufferToFill);
-
-    
-private:
-    int clampChannel(int channel);
-    int clampValue(int value);
-    void readSerial();
-    void packByte(int byte, MidiMessage &message);
-    void validatePacket(MidiMessage &message);
-    bool processingSysEx = false;
-    int packetSize = 0;
-
-    // Note Off
-
-};
-
 class MidiMessage
 {
 public:
@@ -69,6 +31,9 @@ public:
     int type = -1;
     int dataByte1 = -1;
     int dataByte2 = -1;
+
+    int     numBytes = 0;
+    bool    m_IsSysEx = false;
     
         
     /*
@@ -76,7 +41,7 @@ public:
     bool    isController();
     bool    isNoteOn();
     bool    inNoteOff();
-    bool    isNoteOnOrOff();
+    bool    isNoteOnOrOff();+
     bool    isSysEx();
     
     int     getNumBytes();
@@ -84,17 +49,41 @@ public:
     */
 };
 
-class MidiMessageBuffer
+class Midi
 {
 public:
-    /*
-    void clear();
-    void appendMidiMessage(MidiMessage message);
-    void prependMidiMessage(MidiMessage message);
-    int  getNumMessages();
-    MidiMessage getMessageAtIndex(int index)
-     */
     
+    Midi();
+    
+    // ============= Init
+    void start();
+
+    
+    // ============= Output
+    void sendController(int channel, int cc, int value);
+    void sendNoteOn(int channel, int note, int velocity);
+    void sendNoteOff(int channel, int note, int velocity);
+    
+    
+    // ============= Input
+    MidiMessage getInputMidiMessage();
+    //void appendInputMidiMessagesToBuffer(MidiMessageBuffer& buffer);
+    //void fillBufferWithInputMidiMessages(MidiMessageBuffer& bufferToFill);
+
+    
+private:
+    int clampChannel(int channel);
+    int clampValue(int value);
+    void readSerial(int &byte);
+    void packByte(int &byte, MidiMessage &message);
+    bool validatePacket(MidiMessage &message);
+    bool processingSysEx = false;
+    int packetSize = 0;
+
+    MidiMessage m_Message;
+
 };
+
+
 
 #endif /* arduino_midi_h */
