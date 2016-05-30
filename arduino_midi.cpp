@@ -19,7 +19,9 @@ Midi::Midi()
 
 void Midi::start()
 {
-    Serial.begin(31250);	
+    // Software serial port, will be our hardware interface
+    m_SoftSerial = new SoftwareSerial(10,11);
+    m_SoftSerial.begin(31250);	
 }
 
 // ------------------------------------------------------------ //
@@ -27,23 +29,23 @@ void Midi::start()
 // ------------------------------------------------------------ //
 void Midi::sendController(int channel, int cc, int value)
 {
-    Serial.write(clampChannel(channel) + 175); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
-    Serial.write(clampValue(cc));
-    Serial.write(clampValue(value));
+    m_SoftSerial.write(clampChannel(channel) + 175); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+    m_SoftSerial.write(clampValue(cc));
+    m_SoftSerial.write(clampValue(value));
 }
 
 void Midi::sendNoteOn(int channel, int note, int velocity)
 {
-   Serial.write(clampChannel(channel) + 143); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
-   Serial.write(clampValue(note));
-   Serial.write(clampValue(velocity)); 
+   m_SoftSerial.write(clampChannel(channel) + 143); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+   m_SoftSerial.write(clampValue(note));
+   m_SoftSerial.write(clampValue(velocity)); 
 }
 
 void Midi::sendNoteOff(int channel, int note, int velocity)
 {
-   Serial.write(clampChannel(channel) + 127); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
-   Serial.write(clampValue(note));
-   Serial.write(clampValue(velocity)); 
+   m_SoftSerial.write(clampChannel(channel) + 127); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+   m_SoftSerial.write(clampValue(note));
+   m_SoftSerial.write(clampValue(velocity)); 
 }
 
 int Midi::clampChannel(int channel)
@@ -77,7 +79,7 @@ int Midi::clampValue(int value)
 // ------------------------------------------------------------ //
 // --------------------------- Input -------------------------- //
 // ------------------------------------------------------------ //
-MidiMessage Midi::getInputMidiMessage()
+MidiMessage Midi::receiveInput()
 {
     int serialByte = -1;
 
@@ -99,7 +101,7 @@ MidiMessage Midi::getInputMidiMessage()
 void Midi::readSerial(int &byte)
 {
     // Read incoming bytes
-    if (Serial.available())
+    if (m_SoftSerial.available())
     {
         byte = Serial.read();
     }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////
 ///
-///   @file     arduino_midi_basic.ino
+///   @file     arduino_midi_output.ino
 ///   @author   emergent.io
 ///   @license  BSD
 ///   @contact  conner@emergent.io

@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include "Arduino.h"
+#include <SoftwareSerial.h>
 
 class MidiMessage
 {
@@ -66,7 +67,7 @@ public:
     
     
     // ============= Input
-    MidiMessage getInputMidiMessage();
+    MidiMessage receiveInput();
     //void appendInputMidiMessagesToBuffer(MidiMessageBuffer& buffer);
     //void fillBufferWithInputMidiMessages(MidiMessageBuffer& bufferToFill);
 
@@ -81,6 +82,7 @@ private:
     int packetSize = 0;
 
     MidiMessage m_Message;
+    SoftwareSerial *m_SoftSerial;
 
 };
 
