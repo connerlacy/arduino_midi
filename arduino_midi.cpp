@@ -78,64 +78,159 @@ int Midi::clampValue(int value)
 // ------------------------------------------------------------ //
 // --------------------------- Input -------------------------- //
 // ------------------------------------------------------------ //
-MidiMessageBuffer Midi::getInputMidiMessages()
+MidiMessage Midi::getInputMidiMessage()
 {
-    
+    MidiMessage message;
+
+    readSerial(serialByte);
+
+    if(serialByte > -1)
+    {
+        packByte(serialByte, message);
+    }
+
+    if(packetSize == 3)
+    {
+        validatePacket(message);
+    }
 }
 
-void Midi::readSerial()
+void Midi::readSerial(int &byte)
 {
     // Read incoming bytes
     if (Serial.available())
     {
-        serialByte = Serial.read();
+        byte = Serial.read();
     }
 }
 
-void Midi::processByte()
+void Midi::packByte(int &byte, MidiMessage &message)
 {
     if(!processingSysEx)
     {
-    	// If our latest byte is legit...
-    	if(serialByte != -1)
-    	{
-    		// Get message type.
-    		int status = 0x8 ^ ((serialByte) >> 4);
+        // Expecting status byte...
+        if(packetSize == 0)
+        {
+            // Get message type.
+            int status = 0x08 ^ ((byte) >> 4);
 
-    		switch (status)
-    		{
-    			case MidiMessage::NOTE_OFF:
-    			break;
+            // Check to make sure it's in the appropriate range
+            if(status >= 0 && status <= 7)
+            {
+                // If it is, increment packet size
+                packetSize++;
+                message.type = status;
 
-    			case MidiMessage::NOTE_ON:
-    			break;
+                // Set Channel (if not SysEx)
+                if(status != 7)
+                {
+                    message.channel = (byte) & 0x0F;
+                }
+                else
+                {
+                    // Handle sysetem exclusive here
+                }
+            }
+            else
+            {
+                // ERROR
+            }
+        }
 
-    			case MidiMessage::POLYPHONIC:
-    			break;
+        // Expecting first Data Byte...
+        else if(packetSize == 1)
+        {
+            if(!(byte >> 7))
+            {
+                packetSize++;
+                message.dataByte1 = byte;
+            }
+            else
+            {
+                // ERROR INVALID DATA BYTE 1
+            }
+        }
 
-    			case MidiMessage::CC:
-    			break;
+        // Expecting second Data Byte...
+        else if(packetSize == 2)
+        {
+            if(!(byte >> 7))
+            {
+                packetSize++;
+                message.dataByte1 = byte;
+                completMessage();
+            }
+            else
+            {
+                // ERROR INVALID DATA BYTE 2
+            }
+        }
 
-    			case MidiMessage::PROGRAM_CHANGE:
-    			break;
+        // Packet size is greater than 2, must be processing sysex
+        else
+        {
 
-    			case MidiMessage::CHANNEL_PRESSURE:
-    			break;
+        }
+        
+        /*
+        switch (status)
+        {
+            case MidiMessage::NOTE_OFF:
+            break;
 
-    			case MidiMessage::PITCH_BEND:
-    			break;
+            case MidiMessage::NOTE_ON:
+            break;
 
-    			case MidiMessage::SYSTEM_EXCLUSIVE:
-    				processingSysEx = true;
-    			break;    			
+            case MidiMessage::POLYPHONIC:
+            break;
 
-    			default:
-    			break;
-    		}
+            case MidiMessage::CC:
+            break;
 
-    	}
-    	
+            case MidiMessage::PROGRAM_CHANGE:
+            break;
+
+            case MidiMessage::CHANNEL_PRESSURE:
+            break;
+
+            case MidiMessage::PITCH_BEND:
+            break;
+
+            case MidiMessage::SYSTEM_EXCLUSIVE:
+            processingSysEx = true;
+            break;    			
+
+            default:
+            break;
+        }
+            */
     }
+
+}
+
+bool Midi::validatePacket(MidiMessage &message)
+{
+    if(message.channel > 15  || message.channel < 0)
+    {
+        return false;
+    }
+
+    if(type < 0 || type > 6) // Not supporting sysex for now
+    {
+        return false;
+    }
+
+    if(dataByte1 < 0 || dataByte1 > 127)
+    {
+        return false;
+    }
+
+    if(dataByte2 < 0 || dataByte2 > 127)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 // ============================================================ //

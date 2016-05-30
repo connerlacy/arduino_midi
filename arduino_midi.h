@@ -41,11 +41,13 @@ private:
     int clampChannel(int channel);
     int clampValue(int value);
     void readSerial();
-    void processByte();
+    void packByte(int byte, MidiMessage &message);
+    void validatePacket(MidiMessage &message);
     bool processingSysEx = false;
+    int packetSize = 0;
 
-    int serialByte = -1;
-    int rawByteBuffer[256];
+    // Note Off
+
 };
 
 class MidiMessage
@@ -62,6 +64,11 @@ public:
         PITCH_BEND,
         SYSTEM_EXCLUSIVE
     };
+
+    int channel = -1;
+    int type = -1;
+    int dataByte1 = -1;
+    int dataByte2 = -1;
     
         
     /*
