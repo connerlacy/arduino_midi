@@ -17,35 +17,82 @@ Midi::Midi()
 
 }
 
-void Midi::start()
+void Midi::start(int softwareBaudRate)
 {
     // Software serial port, will be our hardware interface
-    m_SoftSerial = new SoftwareSerial(10,11);
-    m_SoftSerial.begin(31250);	
+    m_HardwareSerial = new SoftwareSerial(10,11);
+    m_HardwareSerial->begin(31250);	
+
+    // Hardware Serial port, standard Arduino serial/UART
+    Serial.begin(softwareBaudRate);
+    while(!Serial){;}
 }
 
 // ------------------------------------------------------------ //
 // --------------------------- Output ------------------------- //
 // ------------------------------------------------------------ //
-void Midi::sendController(int channel, int cc, int value)
+void Midi::sendController(int channel, int cc, int value, int port)
 {
-    m_SoftSerial.write(clampChannel(channel) + 175); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
-    m_SoftSerial.write(clampValue(cc));
-    m_SoftSerial.write(clampValue(value));
+    if(port == HARDWARE)
+    {
+        m_HardwareSerial->write(clampChannel(channel) + 175); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+        m_HardwareSerial->write(clampValue(cc));
+        m_HardwareSerial->write(clampValue(value));     
+    }
+    else if(port == SOFTWARE)
+    {
+        Serial.write(clampChannel(channel) + 175); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+        Serial.write(clampValue(cc));
+        Serial.write(clampValue(value));  
+    }
 }
 
-void Midi::sendNoteOn(int channel, int note, int velocity)
+void Midi::sendNoteOn(int channel, int note, int velocity, int port)
 {
-   m_SoftSerial.write(clampChannel(channel) + 143); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
-   m_SoftSerial.write(clampValue(note));
-   m_SoftSerial.write(clampValue(velocity)); 
+    if(port == HARDWARE)
+    {
+        m_HardwareSerial->write(clampChannel(channel) + 143); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+        m_HardwareSerial->write(clampValue(note));
+        m_HardwareSerial->write(clampValue(velocity)); 
+    }
+    else if(port == SOFTWARE)
+    {
+        Serial.write(clampChannel(channel) + 143); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+        Serial.write(clampValue(note));
+        Serial.write(clampValue(velocity));
+    }
 }
 
-void Midi::sendNoteOff(int channel, int note, int velocity)
+void Midi::sendNoteOff(int channel, int note, int velocity, int port)
 {
-   m_SoftSerial.write(clampChannel(channel) + 127); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
-   m_SoftSerial.write(clampValue(note));
-   m_SoftSerial.write(clampValue(velocity)); 
+    if(port == HARDWARE)
+    {
+        m_HardwareSerial->write(clampChannel(channel) + 127); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+        m_HardwareSerial->write(clampValue(note));
+        m_HardwareSerial->write(clampValue(velocity)); 
+    }
+    else if(port == SOFTWARE)
+    {
+       Serial.write(clampChannel(channel) + 127); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+       Serial.write(clampValue(note));
+       Serial.write(clampValue(velocity));
+   }
+}
+
+void Midi::sendMidiMessage(const MidiMessage &message, int port)
+{
+    if(port == HARDWARE)
+    {
+        m_HardwareSerial->write(message.statusByte); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+        m_HardwareSerial->write(message.dataByte1);
+        m_HardwareSerial->write(message.dataByte2); 
+    }
+    else if(port == SOFTWARE)
+    {
+       Serial.write(message.statusByte); // Note On - Status bytes: [144 - 159] ==> Channel: [1 - 16]
+       Serial.write(message.dataByte1);
+       Serial.write(message.dataByte2);
+   }
 }
 
 int Midi::clampChannel(int channel)
@@ -79,32 +126,52 @@ int Midi::clampValue(int value)
 // ------------------------------------------------------------ //
 // --------------------------- Input -------------------------- //
 // ------------------------------------------------------------ //
-MidiMessage Midi::receiveInput()
+MidiMessage Midi::receiveInput(int port)
 {
     int serialByte = -1;
 
-    readSerial(serialByte);
+    readSerial(serialByte, port);
 
     if(serialByte > -1)
     {
+        Serial.write(serialByte);
         packByte(serialByte, m_Message);
     }
+    
 
     if( validatePacket(m_Message) )
     {
-        return m_Message;
+        MidiMessage m = m_Message;
+        m_Message = MidiMessage(); //Clear
+        return m;
     }
 
     return MidiMessage();
 }
 
-void Midi::readSerial(int &byte)
+void Midi::readSerial(int &byte, int port)
 {
     // Read incoming bytes
-    if (m_SoftSerial.available())
+    if(port == HARDWARE)
     {
-        byte = Serial.read();
+        if (m_HardwareSerial->available())
+        {
+            byte = Serial.read();
+        }   
     }
+    else if(port == SOFTWARE)
+    {
+
+        if (Serial.available())
+        {
+            byte = Serial.read();
+        } 
+    }
+    else
+    {
+        byte = -1;
+    }
+
 }
 
 void Midi::packByte(int &byte, MidiMessage &message)
@@ -115,17 +182,18 @@ void Midi::packByte(int &byte, MidiMessage &message)
         if(message.numBytes == 0)
         {
             // Get message type.
-            int status = 0x08 ^ ((byte) >> 4);
+            message.statusByte = byte;
+            int type = 0x08 ^ ((byte) >> 4);
 
             // Check to make sure it's in the appropriate range
-            if(status >= 0 && status <= 7)
+            if(type >= 0 && type <= 7)
             {
                 // If it is, increment packet size
                 message.numBytes++;
-                message.type = status;
+                message.type = type;
 
                 // Set Channel (if not SysEx)
-                if(status != 7)
+                if(type != 7)
                 {
                     message.channel = (byte) & 0x0F;
                 }
@@ -160,7 +228,7 @@ void Midi::packByte(int &byte, MidiMessage &message)
             if(!(byte >> 7))
             {
                 message.numBytes++;
-                message.dataByte1 = byte;
+                message.dataByte2 = byte;
             }
             else
             {
@@ -212,12 +280,7 @@ void Midi::packByte(int &byte, MidiMessage &message)
 
 bool Midi::validatePacket(MidiMessage &message)
 {
-    if(message.channel > 15  || message.channel < 0)
-    {
-        return false;
-    }
-
-    if(message.type < 0 || message.type > 6) // Not supporting sysex for now
+    if(message.statusByte < 128  || message.statusByte > 255)
     {
         return false;
     }
@@ -231,6 +294,7 @@ bool Midi::validatePacket(MidiMessage &message)
     {
         return false;
     }
+
 
     if(message.numBytes != 3)
     {

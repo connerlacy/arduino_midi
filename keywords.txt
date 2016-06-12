@@ -7,17 +7,25 @@
 #######################################
 
 Midi	KEYWORD1
+MidiMessage	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
+
+# Midi
+sendMidiMessage		KEYWORD2
 sendController	KEYWORD2
 sendNoteOn	KEYWORD2
 sendNoteOff	KEYWORD2
 start	KEYWORD2
+receiveInput	KEYWORD2
+
+# MidiMessage
+isValid	KEYWORD2
 
 
 #######################################
 # Constants (LITERAL1)
 #######################################
-#someVariable KEYWORD3
+
